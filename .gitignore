@@ -6,6 +6,3 @@ __pycache__/
 
 # Secrets (KAGGLE_API_TOKEN)
 .env
-
-# Submissions and tuning results
-outputs/

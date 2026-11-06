@@ -21,6 +21,7 @@ The data is downloaded and cached by `kagglehub` the first time you run anything
 uv run train   # fit with src/aml/config.py, writes outputs/submission.csv
 uv run tune    # CV grid search from src/aml/tune.py, writes outputs/tuning.csv
 uv run importance  # RF permutation importances (slow, run on the HPC), writes outputs/importance.csv
+uv run sweep   # best number of top features for RF / GP / SVR (slow, HPC), writes outputs/sweep.csv
 ```
 
 ## Layout

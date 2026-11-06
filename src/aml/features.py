@@ -1,5 +1,7 @@
 """Feature selection steps that work on raw data (NaNs allowed, no scaling)."""
 
+import time
+
 import numpy as np
 import pandas as pd
 
@@ -62,7 +64,7 @@ def rf_permutation_importance(
     """
 
     rng = np.random.default_rng(seed)
-    
+
     shadows = pd.DataFrame(
         {
             f"shadow_{c}": rng.permutation(X[c].to_numpy())
@@ -70,11 +72,14 @@ def rf_permutation_importance(
         },
         index=X.index,
     )
-    
+
     X = pd.concat([X, shadows], axis=1)
 
     folds = []
-    for train, val in KFold(n_splits, shuffle=True, random_state=seed).split(X):
+    start = time.time()
+    splits = KFold(n_splits, shuffle=True, random_state=seed).split(X)
+    for i, (train, val) in enumerate(splits, 1):
+        print(f"[fold {i}/{n_splits}] fitting RF...", flush=True)
         rf = RandomForestRegressor(
             n_estimators=n_estimators,
             max_features="sqrt",
@@ -82,6 +87,11 @@ def rf_permutation_importance(
             n_jobs=-1,
         ).fit(X.iloc[train], y.iloc[train])
         rf.set_params(n_jobs=1)  # permutation_importance parallelizes instead
+        print(
+            f"[fold {i}/{n_splits}] permuting {X.shape[1]} features "
+            f"x {n_repeats} repeats...",
+            flush=True,
+        )
         result = permutation_importance(
             rf,
             X.iloc[val],
@@ -92,6 +102,13 @@ def rf_permutation_importance(
             n_jobs=-1,
         )
         folds.append(result.importances_mean)
+        elapsed = time.time() - start
+        eta = elapsed / i * (n_splits - i)
+        print(
+            f"[fold {i}/{n_splits}] done, elapsed {elapsed / 60:.1f} min, "
+            f"~{eta / 60:.1f} min left",
+            flush=True,
+        )
 
     imp = pd.DataFrame(np.array(folds).T, index=X.columns)
     return pd.DataFrame({"mean": imp.mean(axis=1), "std": imp.std(axis=1)}).sort_values(

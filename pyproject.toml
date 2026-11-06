@@ -17,6 +17,7 @@ dependencies = [
 train = "aml.train:main"
 tune = "aml.tune:main"
 importance = "aml.importance:main"
+sweep = "aml.sweep:main"
 
 [dependency-groups]
 dev = [
