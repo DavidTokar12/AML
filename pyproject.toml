@@ -13,12 +13,6 @@ dependencies = [
     "scikit-learn>=1.6",
 ]
 
-[project.scripts]
-train = "aml.train:main"
-tune = "aml.tune:main"
-importance = "aml.importance:main"
-sweep = "aml.sweep:main"
-
 [dependency-groups]
 dev = [
     "ipykernel",
