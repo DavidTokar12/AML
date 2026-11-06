@@ -20,6 +20,7 @@ The data is downloaded and cached by `kagglehub` the first time you run anything
 ```bash
 uv run train   # fit with src/aml/config.py, writes outputs/submission.csv
 uv run tune    # CV grid search from src/aml/tune.py, writes outputs/tuning.csv
+uv run importance  # RF permutation importances (slow, run on the HPC), writes outputs/importance.csv
 ```
 
 ## Layout
@@ -28,7 +29,8 @@ uv run tune    # CV grid search from src/aml/tune.py, writes outputs/tuning.csv
 - `src/aml/tune.py`: the hyperparameter grid. Any `Config` field can go in it. Copy the best values back into `config.py`.
 - `src/aml/pipeline.py`: outlier removal, the sklearn pipeline, and cross-validation.
 - `src/aml/data.py`: loading data and writing the submission.
-- `notebooks/eda.ipynb`: data exploration.
+- `src/aml/features.py`: feature selection on raw data (work in progress).
+- `notebooks/feature_selection.ipynb`: exploring the feature selection steps.
 
 ## Pipeline
 

@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 train = "aml.train:main"
 tune = "aml.tune:main"
+importance = "aml.importance:main"
 
 [dependency-groups]
 dev = [
