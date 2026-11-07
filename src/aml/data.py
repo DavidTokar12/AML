@@ -6,6 +6,7 @@ import pandas as pd
 
 from dotenv import load_dotenv
 
+from aml.config import FEATURES_DIR
 from aml.config import OUTLIER_FRAC
 from aml.config import SEED
 from aml.features import clean_features
@@ -34,3 +35,13 @@ def load_clean_data() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray
     n_out = round(OUTLIER_FRAC * len(X))
     inlier = ~X.index.isin(outlier_scores(X, y, seed=SEED).index[:n_out])
     return X, y, X_test, inlier
+
+
+def load_features() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray]:
+    """The locked, preprocessed features written by scripts/preprocess.py:
+    X_train, y_train, X_test, inlier.
+    """
+    train = pd.read_csv(FEATURES_DIR / "train.csv", index_col="id")
+    X_test = pd.read_csv(FEATURES_DIR / "test.csv", index_col="id")
+    y, inlier = train.pop("y"), train.pop("inlier").to_numpy()
+    return train, y, X_test, inlier
