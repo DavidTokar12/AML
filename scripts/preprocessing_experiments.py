@@ -17,15 +17,18 @@ import time
 import numpy as np
 import pandas as pd
 
+from sklearn.ensemble import RandomForestRegressor
+
 from aml.config import CV_FOLDS
 from aml.config import OUTPUT_DIR
 from aml.config import SEED
 from aml.data import load_data
 from aml.evaluate import cv_scores
 from aml.evaluate import search_k
+from aml.features import add_shadows
 from aml.features import constant_features
 from aml.features import outlier_scores
-from aml.features import rf_permutation_importance
+from aml.features import permutation_importance_cv
 from aml.models import MODELS
 from aml.models import make_model
 
@@ -43,7 +46,10 @@ def ranking(X: pd.DataFrame, y: pd.Series, name: str) -> list[str]:
         imp = pd.read_csv(path, index_col=0)
     else:
         print(f"Computing importance ({name} rows)...", flush=True)
-        imp = rf_permutation_importance(X, y, seed=SEED)
+        rf = RandomForestRegressor(
+            n_estimators=1000, max_features="sqrt", random_state=SEED, n_jobs=-1
+        )
+        imp = permutation_importance_cv(rf, add_shadows(X, seed=SEED), y, seed=SEED)
         imp.to_csv(path)
     return [c for c in imp.index if not c.startswith("shadow_")]
 
