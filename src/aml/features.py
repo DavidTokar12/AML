@@ -288,7 +288,7 @@ def gp_ard_importance(
     y: pd.Series,
     n_splits: int = 5,
     n_repeats: int = 10,
-    max_iter: int = 2000,
+    max_iter: int = 300,
     seed: int = 25,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """GP with one RBF length scale per feature (ARD), two importances per feature.
