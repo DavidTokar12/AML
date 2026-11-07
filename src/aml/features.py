@@ -287,15 +287,22 @@ def gp_ard_importance(
     X: pd.DataFrame,
     y: pd.Series,
     n_splits: int = 5,
+    n_repeats: int = 10,
     max_iter: int = 2000,
     seed: int = 25,
-) -> pd.DataFrame:
-    """GP with one RBF length scale per feature (ARD); importance = 1 / length scale.
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """GP with one RBF length scale per feature (ARD), two importances per feature.
+
+    - permutation: drop in validation R² when the feature is shuffled. Measures
+      how much the predictions depend on the feature.
+    - length scale: 1 / length scale. Measures how fast the prediction changes
+      along the feature, so a big smooth effect can score lower than a small
+      sharp one.
 
     Quantile transform + KNN imputation first, so all features share a scale.
-    Fit once per training fold (in parallel) and average, so one optimizer
-    run's local optimum doesn't decide the order. Also prints each fold's
-    validation R².
+    One fit per training fold (folds in parallel), averaged over folds, so one
+    optimizer run's local optimum doesn't decide the order. Also prints each
+    fold's validation R².
     """
     Z = quantile_knn(X, seed)
     d = Z.shape[1]
@@ -311,16 +318,25 @@ def gp_ard_importance(
             random_state=seed,
         ).fit(Z.iloc[train], y.iloc[train])
         r2 = gp.score(Z.iloc[val], y.iloc[val])
-        print(f"  [fold {i}] done, validation R² {r2:.4f}", flush=True)
-        return 1 / gp.kernel_.k1.k2.length_scale, r2
+        print(f"  [fold {i}] fitted, validation R² {r2:.4f}, permuting...", flush=True)
+        perm = permutation_importance(
+            gp,
+            Z.iloc[val],
+            y.iloc[val],
+            scoring="r2",
+            n_repeats=n_repeats,
+            random_state=seed,
+        ).importances_mean
+        print(f"  [fold {i}] done", flush=True)
+        return perm, 1 / gp.kernel_.k1.k2.length_scale, r2
 
     splits = KFold(n_splits, shuffle=True, random_state=seed).split(Z)
     results = Parallel(n_jobs=n_splits)(
         delayed(fit_fold)(i, train, val) for i, (train, val) in enumerate(splits, 1)
     )
-    r2 = np.array([r for _, r in results])
+    perm, inv_length_scale, r2 = (np.array(r) for r in zip(*results, strict=True))
     print(f"  ARD GP out-of-fold R² {r2.mean():.4f} ± {r2.std():.4f}", flush=True)
-    return _summary(np.array([imp for imp, _ in results]), X.columns)
+    return _summary(perm, X.columns), _summary(inv_length_scale, X.columns)
 
 
 def uniform_noise_features(X: pd.DataFrame) -> list[str]:

@@ -7,7 +7,7 @@ the first stage (cleaned features, outlier rows removed) plus 20 new shadows.
 
 Run on the HPC after scripts/feature_importance.py:
   uv run python scripts/gp_ranking.py
-Writes outputs/importance_gp.csv.
+Writes outputs/importance_gp_perm.csv (permutation importance, the one to\ntrust) and outputs/importance_gp_ls.csv (1 / length scale, for comparison).
 """
 
 import pandas as pd
@@ -58,13 +58,15 @@ def main() -> None:
     y = y[inlier]
     print(f"{X.shape[1]} features (incl. 20 shadows), {len(X)} rows", flush=True)
 
-    imp = gp_ard_importance(X, y, seed=SEED)
-    path = OUTPUT_DIR / "importance_gp.csv"
-    imp.to_csv(path)
-    is_shadow = imp.index.str.startswith("shadow_")
-    n_beat = (imp.loc[~is_shadow, "mean"] > imp.loc[is_shadow, "mean"].max()).sum()
-    print(f"{n_beat} features beat the best shadow, wrote {path}")
-    print(imp.head(20).to_string())
+    perm, length_scale = gp_ard_importance(X, y, seed=SEED)
+    for name, imp in (("perm", perm), ("ls", length_scale)):
+        path = OUTPUT_DIR / f"importance_gp_{name}.csv"
+        imp.to_csv(path)
+        is_shadow = imp.index.str.startswith("shadow_")
+        best_shadow = imp.loc[is_shadow, "mean"].max()
+        n_beat = (imp.loc[~is_shadow, "mean"] > best_shadow).sum()
+        print(f"\n{name}: {n_beat} features beat the best shadow, wrote {path}")
+        print(imp.head(20).to_string())
 
 
 if __name__ == "__main__":
