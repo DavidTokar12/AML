@@ -50,10 +50,20 @@ def robust_scale(X: pd.DataFrame) -> pd.DataFrame:
     return (X - X.median()) / iqr.replace(0, np.nan)
 
 
+def spearman(X: pd.DataFrame) -> pd.DataFrame:
+    """Spearman correlation: rank each feature once, then Pearson on the ranks.
+
+    pandas' exact version re-ranks every pair on the rows both have (~1 min
+    here, far longer on the HPC); this differs by < 0.003 and gives the same
+    copy groups and the same correlated block.
+    """
+    return X.rank().corr()
+
+
 def copy_groups(corr: pd.DataFrame, threshold: float = 0.94) -> list[list[str]]:
     """Groups of features linked by |corr| >= threshold (noisy copies).
 
-    corr: absolute correlation matrix, e.g. X.corr(method="spearman").abs().
+    corr: absolute correlation matrix, e.g. spearman(X).abs().
     Linking is transitive: if a~b and b~c, then a, b, c form one group.
     """
     n, labels = connected_components(
@@ -208,7 +218,7 @@ def correlated_block(X: pd.DataFrame, threshold: float = 0.3) -> list[str]:
 
     In this data the other features correlate with nothing and carry no signal.
     """
-    corr = X.corr(method="spearman").abs().to_numpy().copy()
+    corr = spearman(X).abs().to_numpy().copy()
     np.fill_diagonal(corr, 0)
     return X.columns[corr.max(axis=0) >= threshold].tolist()
 
@@ -231,7 +241,7 @@ def clean_features(
     X_all = pd.concat(
         [X_train.drop(columns=drop), X_test.drop(columns=drop)], ignore_index=True
     )
-    groups = copy_groups(X_all.corr(method="spearman").abs(), copy_threshold)
+    groups = copy_groups(spearman(X_all).abs(), copy_threshold)
     merged = merge_copies(X_all, groups)
     n = len(X_train)
     return (

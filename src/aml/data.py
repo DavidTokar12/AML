@@ -30,8 +30,11 @@ def load_clean_data() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray
     """Cleaned features (notebook steps 1-6) and the inlier mask of the
     training rows: X_train, y_train, X_test, inlier.
     """
+    print("Loading data...", flush=True)
     X_train, y, X_test = load_data()
+    print("Cleaning...", flush=True)
     X, X_test = clean_features(X_train, X_test)
+    print("Flagging outlier rows...", flush=True)
     n_out = round(OUTLIER_FRAC * len(X))
     inlier = ~X.index.isin(outlier_scores(X, y, seed=SEED).index[:n_out])
     return X, y, X_test, inlier
