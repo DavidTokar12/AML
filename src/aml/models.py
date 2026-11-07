@@ -27,7 +27,13 @@ GP_BASES = ("rbf", "matern05", "matern15", "matern25", "rq")
 MATERN_NU = {"matern05": 0.5, "matern15": 1.5, "matern25": 2.5}
 
 
-def gp_kernel(base: str, d: int, ard: bool = False, extra: str | None = None):
+def gp_kernel(
+    base: str,
+    d: int,
+    ard: bool = False,
+    extra: str | None = None,
+    noise_floor: float = 1e-5,
+):
     """GP kernel for d quantile-transformed features: amplitude * base + noise.
 
     base: "rbf", "matern05", "matern15", "matern25" (rougher to smoother) or
@@ -35,6 +41,9 @@ def gp_kernel(base: str, d: int, ard: bool = False, extra: str | None = None):
     ard: one length scale per feature instead of one shared length scale.
     extra: "linear" adds a linear term (big smooth trends), "long" adds a
       second RBF with a long length scale (broad trend plus local detail).
+    noise_floor: lower bound of the noise level (on normalized y). Without a
+      floor the noise can collapse to ~0 and the GP fits the training ages as
+      if they were exact.
     """
     length_scale = np.full(d, np.sqrt(d)) if ard else np.sqrt(d)
     bounds = (1e-2, 1e5) if ard else (1e-1, 1e4)
@@ -54,7 +63,7 @@ def gp_kernel(base: str, d: int, ard: bool = False, extra: str | None = None):
         kernel += ConstantKernel(0.1, (1e-5, 1e2)) * RBF(10 * np.sqrt(d), (1.0, 1e5))
     elif extra is not None:
         raise ValueError(f"Unknown extra: {extra}")
-    return kernel + WhiteKernel(0.3, (1e-5, 10.0))
+    return kernel + WhiteKernel(0.3, (noise_floor, 10.0))
 
 
 def make_model(name: str, k: int, quantile: bool = False, knn: bool = False):

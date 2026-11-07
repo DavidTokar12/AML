@@ -1,7 +1,8 @@
-"""Compare GP kernels on the selected features, saving every fit's predictions.
+"""Compare GP kernels on a feature set, saving every fit's predictions.
 
-Features: the cleaned features with GP permutation importance > 0
-(outputs/importance_gp_perm.csv, 219 features).
+Feature sets (first argument, default "block"):
+  block    the correlated block of the cleaned features (~185, no y involved)
+  gp_perm  cleaned features with GP permutation importance > 0 (219)
 Preprocessing (fixed): quantile transform to normal, then KNNImputer (default).
 CV: 5 folds x 3 repeats. Training folds exclude the outlier rows, R² is scored
 on the inlier validation rows (predictions are saved for all rows).
@@ -9,11 +10,13 @@ on the inlier validation rows (predictions are saved for all rows).
 Kernels (see aml.models.gp_kernel):
   stage 1, one shared length scale: rbf, matern05/15/25, rq, each plain,
            + linear term, + long RBF                           (15 kernels)
+           and each plain one again with a noise floor of 0.01 ("_nf", 5 kernels):
+           without the floor the noise level collapses to ~1e-5
   stage 2, one length scale per feature (ARD): rbf, matern15, matern25, each
            plain and + linear term, optimizer capped at MAX_ITER  (6 kernels)
 Every kernel is also fitted on all inlier training rows to predict the test set.
 
-Outputs in outputs/gp_kernels/:
+Outputs in outputs/gp_kernels/<feature set>/:
   <kernel>_oof.csv   out-of-fold predictions: id, repeat, fold, y, pred, std, inlier
   <kernel>_test.csv  test predictions: id, pred, std
   <kernel>_fits.csv  per fit: repeat, fold (0 = full fit), r2, log marginal
@@ -21,10 +24,12 @@ Outputs in outputs/gp_kernels/:
   summary.csv        per kernel: R² mean/std, difference to the baseline, folds won
 Kernels whose _fits.csv exists are skipped, so a crashed run can be restarted.
 
-Run on the HPC: uv run python scripts/gp_kernels.py
+Run on the HPC: uv run python scripts/gp_kernels.py [block|gp_perm]
 """
 
+import sys
 import time
+import warnings
 
 from collections import defaultdict
 
@@ -33,6 +38,7 @@ import pandas as pd
 
 from joblib import Parallel
 from joblib import delayed
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.impute import KNNImputer
 from sklearn.metrics import r2_score
@@ -45,6 +51,7 @@ from aml.config import OUTPUT_DIR
 from aml.config import SEED
 from aml.data import load_data
 from aml.features import clean_features
+from aml.features import correlated_block
 from aml.features import outlier_scores
 from aml.features import verbose_lbfgs
 from aml.models import GP_BASES
@@ -53,31 +60,41 @@ from aml.models import gp_kernel
 
 OUTLIER_FRAC = 0.045
 N_REPEATS = 3
-N_JOBS = 32  # parallel fits; an ARD fit needs ~1.5 GB
 ISO_RESTARTS = 2  # extra optimizer starts for the cheap shared-length-scale kernels
 MAX_ITER = 300  # optimizer steps for ARD kernels
-OUT = OUTPUT_DIR / "gp_kernels"
+NOISE_FLOOR = 1e-2  # the floor of the old setup (R² 0.694)
 
 STAGES = {
     "shared length scale": [
-        (base, False, extra) for base in GP_BASES for extra in (None, "linear", "long")
-    ],
+        (base, False, extra, 1e-5)
+        for base in GP_BASES
+        for extra in (None, "linear", "long")
+    ]
+    + [(base, False, None, NOISE_FLOOR) for base in GP_BASES],
     "ARD": [
-        (base, True, extra)
+        (base, True, extra, 1e-5)
         for base in ("rbf", "matern15", "matern25")
         for extra in (None, "linear")
     ],
 }
+# Parallel fits per stage: an ARD fit needs ~3-5 GB, so 64 of them don't fit
+# in 128 GB
+N_JOBS = {"shared length scale": 64, "ARD": 16}
 BASELINE = "rbf"  # the kernel used so far
 
 
-def kernel_name(base: str, ard: bool, extra: str | None) -> str:
-    return base + ("_ard" if ard else "") + (f"+{extra}" if extra else "")
+def kernel_name(base: str, ard: bool, extra: str | None, noise_floor: float) -> str:
+    return (
+        base
+        + ("_ard" if ard else "")
+        + (f"+{extra}" if extra else "")
+        + ("_nf" if noise_floor > 1e-5 else "")
+    )
 
 
-def make_gp(base: str, ard: bool, extra: str | None, d: int, label: str):
+def make_gp(base, ard, extra, noise_floor, d: int, label: str):
     gp = GaussianProcessRegressor(
-        gp_kernel(base, d, ard, extra),
+        gp_kernel(base, d, ard, extra, noise_floor),
         normalize_y=True,
         optimizer=verbose_lbfgs(label, MAX_ITER) if ard else "fmin_l_bfgs_b",
         n_restarts_optimizer=0 if ard else ISO_RESTARTS,
@@ -97,7 +114,16 @@ def fit_one(spec, repeat, fold, train, val, X, y, X_test, inlier):
     name = kernel_name(*spec)
     label = f"{name} r{repeat} f{fold}"
     start = time.time()
-    model = make_gp(*spec, X.shape[1], label).fit(X.iloc[train], y.iloc[train])
+    with warnings.catch_warnings():
+        # Unused parts end at their bounds (linear weight, RQ alpha, the length
+        # scale of an ignored feature or of the long RBF): expected, so hidden.
+        # The noise level warning stays.
+        warnings.filterwarnings(
+            "ignore",
+            message=r".*(constant_value|sigma_0|alpha|length_scale is close to the specified upper).*",
+            category=ConvergenceWarning,
+        )
+        model = make_gp(*spec, X.shape[1], label).fit(X.iloc[train], y.iloc[train])
 
     if fold == 0:
         pred, std = model.predict(X_test, return_std=True)
@@ -132,23 +158,23 @@ def fit_one(spec, repeat, fold, train, val, X, y, X_test, inlier):
     return name, fit, rows
 
 
-def save(name: str, results: list) -> None:
+def save(out, name: str, results: list) -> None:
     fits = pd.DataFrame([fit for fit, _ in results]).sort_values(["repeat", "fold"])
     rows = {fit["fold"] == 0: [] for fit, _ in results}
     for fit, r in results:
         rows[fit["fold"] == 0].append(r)
     pd.concat(rows[False]).sort_values(["repeat", "fold", "id"]).to_csv(
-        OUT / f"{name}_oof.csv", index=False
+        out / f"{name}_oof.csv", index=False
     )
-    pd.concat(rows[True]).to_csv(OUT / f"{name}_test.csv", index=False)
-    fits.to_csv(OUT / f"{name}_fits.csv", index=False)
+    pd.concat(rows[True]).to_csv(out / f"{name}_test.csv", index=False)
+    fits.to_csv(out / f"{name}_fits.csv", index=False)
     cv = fits[fits["fold"] > 0]["r2"]
     print(f"=== {name}: R² {cv.mean():.4f} ± {cv.std():.4f}, saved ===", flush=True)
 
 
-def summarize() -> pd.DataFrame:
+def summarize(out) -> pd.DataFrame:
     scores = {}
-    for path in sorted(OUT.glob("*_fits.csv")):
+    for path in sorted(out.glob("*_fits.csv")):
         fits = pd.read_csv(path)
         fits = fits[fits["fold"] > 0].sort_values(["repeat", "fold"])
         scores[path.name.removesuffix("_fits.csv")] = fits["r2"].to_numpy()
@@ -164,12 +190,14 @@ def summarize() -> pd.DataFrame:
             for name, s in scores.items()
         }
     ).T.sort_values("r2_mean", ascending=False)
-    summary.to_csv(OUT / "summary.csv")
+    summary.to_csv(out / "summary.csv")
     return summary
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
+    feature_set = sys.argv[1] if len(sys.argv) > 1 else "block"
+    out = OUTPUT_DIR / "gp_kernels" / feature_set
+    out.mkdir(parents=True, exist_ok=True)
     X_train, y, X_test = load_data()
     X, X_test = clean_features(X_train, X_test)
 
@@ -177,12 +205,18 @@ def main() -> None:
     n_out = round(OUTLIER_FRAC * len(X))
     inlier = ~X.index.isin(outlier_scores(X, y, seed=SEED).index[:n_out])
 
-    imp = pd.read_csv(OUTPUT_DIR / "importance_gp_perm.csv", index_col=0)
-    imp = imp[~imp.index.str.startswith("shadow_")]
-    features = [c for c in X.columns if c in set(imp.index[imp["mean"] > 0])]
+    if feature_set == "block":
+        keep = set(correlated_block(pd.concat([X, X_test])))
+    elif feature_set == "gp_perm":
+        imp = pd.read_csv(OUTPUT_DIR / "importance_gp_perm.csv", index_col=0)
+        imp = imp[~imp.index.str.startswith("shadow_")]
+        keep = set(imp.index[imp["mean"] > 0])
+    else:
+        raise ValueError(f"Unknown feature set: {feature_set}")
+    features = [c for c in X.columns if c in keep]
     X, X_test = X[features], X_test[features]
     print(
-        f"{len(features)} features, {len(X)} rows ({inlier.sum()} inliers), "
+        f"Feature set {feature_set}: {len(features)} features, {len(X)} rows ({inlier.sum()} inliers), "
         f"{len(X_test)} test rows",
         flush=True,
     )
@@ -195,7 +229,7 @@ def main() -> None:
     all_inliers = np.where(inlier)[0]
 
     for stage, specs in STAGES.items():
-        specs = [s for s in specs if not (OUT / f"{kernel_name(*s)}_fits.csv").exists()]
+        specs = [s for s in specs if not (out / f"{kernel_name(*s)}_fits.csv").exists()]
         if not specs:
             print(f"##### {stage}: all kernels done, skipping #####", flush=True)
             continue
@@ -228,7 +262,7 @@ def main() -> None:
         per_kernel = len(folds) + 1
         collected = defaultdict(list)
         start = time.time()
-        results = Parallel(n_jobs=N_JOBS, return_as="generator_unordered")(tasks)
+        results = Parallel(n_jobs=N_JOBS[stage], return_as="generator_unordered")(tasks)
         for done, (name, fit, rows) in enumerate(results, 1):
             collected[name].append((fit, rows))
             if done % 10 == 0:
@@ -238,10 +272,10 @@ def main() -> None:
                     flush=True,
                 )
             if len(collected[name]) == per_kernel:
-                save(name, collected.pop(name))
+                save(out, name, collected.pop(name))
 
     print("\nSummary (R² on inlier validation rows, 5 folds x 3 repeats):")
-    print(summarize().to_string())
+    print(summarize(out).to_string())
 
 
 if __name__ == "__main__":
