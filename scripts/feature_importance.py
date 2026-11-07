@@ -1,4 +1,4 @@
-"""Score every feature with five different methods, for comparison.
+"""Score every feature with two methods: random forest and mutual information.
 
 Data: the cleaned features (notebook steps 1-6), training rows without the
 flagged outlier rows, plus 20 shadow features (shuffled copies) that every
@@ -6,10 +6,11 @@ method scores too, as its noise level.
 
 Methods:
   rf     random forest, out-of-fold permutation importance
-  hgb    gradient boosting, out-of-fold permutation importance
-  svr    SVR on quantile transform + KNN imputation, out-of-fold permutation
-  lasso  stability selection on quantile transform + KNN imputation
   mi     mutual information with y, per feature on the rows where it is present
+
+Gradient boosting, SVR and Lasso stability selection were tried too and dropped:
+they separate the correlated block from the noise features much worse (AUC
+0.70, 0.79, 0.37 vs 0.94 for RF and 0.85 for MI).
 
 Run on the HPC: uv run python scripts/feature_importance.py [method ...]
 Writes outputs/importance_<method>.csv; methods with an existing file are skipped.
@@ -18,22 +19,15 @@ Writes outputs/importance_<method>.csv; methods with an existing file are skippe
 import sys
 import time
 
-from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 
 from aml.config import OUTPUT_DIR
 from aml.config import SEED
-from aml.data import load_data
+from aml.data import load_clean_data
 from aml.features import add_shadows
-from aml.features import clean_features
-from aml.features import lasso_stability
 from aml.features import mutual_information
-from aml.features import outlier_scores
 from aml.features import permutation_importance_cv
-from aml.models import make_model
 
-
-OUTLIER_FRAC = 0.045
 
 METHODS = {
     "rf": lambda X, y: permutation_importance_cv(
@@ -44,22 +38,6 @@ METHODS = {
         y,
         seed=SEED,
     ),
-    "hgb": lambda X, y: permutation_importance_cv(
-        HistGradientBoostingRegressor(
-            max_iter=500,
-            learning_rate=0.05,
-            max_features=0.3,
-            early_stopping=False,
-            random_state=SEED,
-        ),
-        X,
-        y,
-        seed=SEED,
-    ),
-    "svr": lambda X, y: permutation_importance_cv(
-        make_model("svr", X.shape[1], quantile=True, knn=True), X, y, seed=SEED
-    ),
-    "lasso": lambda X, y: lasso_stability(X, y, seed=SEED),
     "mi": lambda X, y: mutual_information(X, y, seed=SEED),
 }
 
@@ -68,10 +46,7 @@ def main() -> None:
     methods = sys.argv[1:] or list(METHODS)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    X_train, y, X_test = load_data()
-    X, _ = clean_features(X_train, X_test)
-    n_out = round(OUTLIER_FRAC * len(X))
-    inlier = ~X.index.isin(outlier_scores(X, y, seed=SEED).index[:n_out])
+    X, y, _, inlier = load_clean_data()
     X = add_shadows(X[inlier], seed=SEED)
     y = y[inlier]
     print(f"{X.shape[1]} features (incl. 20 shadows), {len(X)} rows", flush=True)

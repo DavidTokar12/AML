@@ -5,24 +5,14 @@ import time
 import numpy as np
 import pandas as pd
 
-from joblib import Parallel
-from joblib import delayed
-from scipy.optimize import minimize
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from sklearn.base import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import IsolationForest
 from sklearn.feature_selection import mutual_info_regression
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
-from sklearn.gaussian_process.kernels import ConstantKernel
-from sklearn.gaussian_process.kernels import WhiteKernel
-from sklearn.impute import KNNImputer
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import LassoCV
 from sklearn.model_selection import KFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import QuantileTransformer
@@ -135,6 +125,13 @@ def add_shadows(X: pd.DataFrame, n_shadow: int = 20, seed: int = 25) -> pd.DataF
     return pd.concat([X, shadows], axis=1)
 
 
+def beats_shadows(imp: pd.DataFrame) -> set[str]:
+    """Features whose importance is above the best shadow feature's."""
+    is_shadow = imp.index.str.startswith("shadow_")
+    best_shadow = imp.loc[is_shadow, "mean"].max()
+    return set(imp.index[(imp["mean"] > best_shadow) & ~is_shadow])
+
+
 def _summary(scores: np.ndarray, columns: pd.Index) -> pd.DataFrame:
     """Mean and std over the rows of `scores` (folds or seeds), best first."""
     return pd.DataFrame(
@@ -182,39 +179,6 @@ def permutation_importance_cv(
     return _summary(np.array(folds), X.columns)
 
 
-def quantile_knn(X: pd.DataFrame, seed: int = 25) -> pd.DataFrame:
-    """Quantile-transform to normal, then KNN-impute (no y involved)."""
-    Z = make_pipeline(
-        QuantileTransformer(output_distribution="normal", random_state=seed),
-        KNNImputer(),
-    ).fit_transform(X)
-    return pd.DataFrame(Z, index=X.index, columns=X.columns)
-
-
-def lasso_stability(
-    X: pd.DataFrame,
-    y: pd.Series,
-    n_subsamples: int = 100,
-    seed: int = 25,
-) -> pd.DataFrame:
-    """Stability selection: how often Lasso keeps each feature.
-
-    Alpha is picked once by LassoCV on all rows, then Lasso is refit on
-    `n_subsamples` random halves of the rows. Score = share of fits in which
-    the coefficient is non-zero. Quantile transform + KNN imputation first.
-    """
-    Z = quantile_knn(X, seed)
-    alpha = LassoCV(cv=5, random_state=seed, n_jobs=-1).fit(Z, y).alpha_
-    print(f"  Lasso alpha {alpha:.4g}", flush=True)
-    rng = np.random.default_rng(seed)
-    selected = []
-    for _ in range(n_subsamples):
-        rows = rng.choice(len(Z), len(Z) // 2, replace=False)
-        coef = Lasso(alpha=alpha, max_iter=10_000).fit(Z.iloc[rows], y.iloc[rows]).coef_
-        selected.append(coef != 0)
-    return _summary(np.array(selected, dtype=float), X.columns)
-
-
 def mutual_information(
     X: pd.DataFrame, y: pd.Series, n_seeds: int = 5, seed: int = 25
 ) -> pd.DataFrame:
@@ -247,96 +211,6 @@ def correlated_block(X: pd.DataFrame, threshold: float = 0.3) -> list[str]:
     corr = X.corr(method="spearman").abs().to_numpy().copy()
     np.fill_diagonal(corr, 0)
     return X.columns[corr.max(axis=0) >= threshold].tolist()
-
-
-def verbose_lbfgs(label: str, max_iter: int):
-    """GP optimizer: sklearn's L-BFGS-B, printing progress every 25 iterations."""
-
-    def optimizer(obj_func, initial_theta, bounds):
-        state = {"iter": 0, "value": np.nan, "start": time.time()}
-
-        def func(theta):
-            state["value"], grad = obj_func(theta)
-            return state["value"], grad
-
-        def callback(_):
-            state["iter"] += 1
-            if state["iter"] % 25 == 0:
-                print(
-                    f"  [{label}] iter {state['iter']}, "
-                    f"-log marginal likelihood {state['value']:.2f}, "
-                    f"{(time.time() - state['start']) / 60:.1f} min",
-                    flush=True,
-                )
-
-        result = minimize(
-            func,
-            initial_theta,
-            method="L-BFGS-B",
-            jac=True,
-            bounds=bounds,
-            callback=callback,
-            options={"maxiter": max_iter},
-        )
-        return result.x, result.fun
-
-    return optimizer
-
-
-def gp_ard_importance(
-    X: pd.DataFrame,
-    y: pd.Series,
-    n_splits: int = 5,
-    n_repeats: int = 10,
-    max_iter: int = 300,
-    seed: int = 25,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """GP with one RBF length scale per feature (ARD), two importances per feature.
-
-    - permutation: drop in validation R² when the feature is shuffled. Measures
-      how much the predictions depend on the feature.
-    - length scale: 1 / length scale. Measures how fast the prediction changes
-      along the feature, so a big smooth effect can score lower than a small
-      sharp one.
-
-    Quantile transform + KNN imputation first, so all features share a scale.
-    One fit per training fold (folds in parallel), averaged over folds, so one
-    optimizer run's local optimum doesn't decide the order. Also prints each
-    fold's validation R².
-    """
-    Z = quantile_knn(X, seed)
-    d = Z.shape[1]
-
-    def fit_fold(i, train, val):
-        kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(
-            np.full(d, np.sqrt(d)), (1e-2, 1e5)
-        ) + WhiteKernel(0.3, (1e-3, 1.0))
-        gp = GaussianProcessRegressor(
-            kernel,
-            normalize_y=True,
-            optimizer=verbose_lbfgs(f"fold {i}", max_iter),
-            random_state=seed,
-        ).fit(Z.iloc[train], y.iloc[train])
-        r2 = gp.score(Z.iloc[val], y.iloc[val])
-        print(f"  [fold {i}] fitted, validation R² {r2:.4f}, permuting...", flush=True)
-        perm = permutation_importance(
-            gp,
-            Z.iloc[val],
-            y.iloc[val],
-            scoring="r2",
-            n_repeats=n_repeats,
-            random_state=seed,
-        ).importances_mean
-        print(f"  [fold {i}] done", flush=True)
-        return perm, 1 / gp.kernel_.k1.k2.length_scale, r2
-
-    splits = KFold(n_splits, shuffle=True, random_state=seed).split(Z)
-    results = Parallel(n_jobs=n_splits)(
-        delayed(fit_fold)(i, train, val) for i, (train, val) in enumerate(splits, 1)
-    )
-    perm, inv_length_scale, r2 = (np.array(r) for r in zip(*results, strict=True))
-    print(f"  ARD GP out-of-fold R² {r2.mean():.4f} ± {r2.std():.4f}", flush=True)
-    return _summary(perm, X.columns), _summary(inv_length_scale, X.columns)
 
 
 def uniform_noise_features(X: pd.DataFrame) -> list[str]:

@@ -15,20 +15,26 @@ KAGGLE_API_TOKEN=KGAT_...
 
 The data is downloaded and cached by `kagglehub` the first time you run anything.
 
-## Run
+## Run (on the HPC, in this order)
 
 ```bash
-uv run python scripts/preprocessing_experiments.py   # slow, run on the HPC
+uv run python scripts/feature_importance.py   # RF + MI importance -> outputs/importance_{rf,mi}.csv
+uv run python scripts/selection_curves.py     # GP R² vs number of features -> outputs/selection_curves.csv
+uv run python scripts/gp_cv.py                # GP on the correlated block, OOF + test predictions -> outputs/gp/
 ```
 
-Flags outliers, ranks features by RF permutation importance (cached in `outputs/importance_*.csv`), then for each model (random forest, Gaussian process, SVR) decides: outlier removal → quantile transform → KNN imputation, each with its own best number of top features. Writes `outputs/preprocessing_experiments.csv`.
+## Pipeline
+
+1. Cleaning (`clean_features`): drop constant features, exact copies and uniform-noise features, merge groups of noisy copies.
+2. Drop the ~4.5% outlier rows from training (scored on inliers only).
+3. Features: the correlated block (features correlated with at least one other), ranked by RF permutation importance and mutual information.
+4. Model: quantile transform → KNN imputation → GP with a Matern 2.5 kernel.
 
 ## Layout
 
-- `src/aml/config.py`: seed, CV folds, output folder.
-- `src/aml/data.py`: downloads and loads the data.
-- `src/aml/features.py`: constant features, row outlier scores, RF permutation importance.
-- `src/aml/models.py`: the models and their preprocessing options (last year's hyperparameters for now).
-- `src/aml/evaluate.py`: cross-validation and the search for the best number of features.
-- `scripts/`: one-off experiments.
-- `notebooks/feature_selection.ipynb`: looking at the data and the feature selection steps.
+- `src/aml/config.py`: seed, CV folds, outlier share, output folder.
+- `src/aml/data.py`: downloads and loads the data; `load_clean_data` adds cleaning and the outlier mask.
+- `src/aml/features.py`: cleaning steps, outlier scores, RF and MI importance.
+- `src/aml/models.py`: the GP pipeline.
+- `scripts/`: HPC runs.
+- `notebooks/feature_selection.ipynb`: looking at the data and every selection step.
