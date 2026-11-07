@@ -56,10 +56,12 @@ def make_gp(d: int) -> GaussianProcessRegressor:
     )
 
 
-# Models that take the raw cleaned features (missing values, no transform):
-# trees ignore monotone transforms and handle missing values themselves, and
-# TabPFN's docs advise against scaling. The GP and SVR need the locked features.
-RAW_INPUT = {"catboost", "extratrees", "tabpfn"}
+# Models that take the raw cleaned features (missing values, no transform)
+# instead of the locked ones: TabPFN's docs advise against scaling. CatBoost and
+# ExtraTrees were ~0.05 R² worse on the raw features: the iterative imputation
+# recovers missing values from the correlated features, their own missing-value
+# handling does not (the quantile transform doesn't matter for trees).
+RAW_INPUT = {"tabpfn"}
 MODEL_NAMES = ("gp", "svr", "catboost", "extratrees", "tabpfn")
 
 

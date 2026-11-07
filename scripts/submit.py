@@ -1,7 +1,7 @@
 """Submissions: fit each model once on all inlier training rows, predict the test set.
 
-Configs: aml.models.make_model (the tuned ones). The GP and SVR use the locked
-features; CatBoost, ExtraTrees and TabPFN the raw ones (aml.models.RAW_INPUT).
+Configs: aml.models.make_model (the tuned ones). All use the locked features
+except TabPFN, which gets the raw ones (aml.models.RAW_INPUT).
 
 Run on the HPC after scripts/preprocess.py:
   uv run python scripts/submit.py [model ...]     (default: all)
