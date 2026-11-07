@@ -1,0 +1,10 @@
+config,mean,std,params
+6,0.6410552297349096,0.038311095905694925,"{'max_features': 1.0, 'min_samples_leaf': 1}"
+7,0.6322055202321882,0.03811425039661941,"{'max_features': 1.0, 'min_samples_leaf': 3}"
+3,0.6256017833850647,0.03767502578677252,"{'max_features': 0.3, 'min_samples_leaf': 1}"
+8,0.6203023325986715,0.037665649870250124,"{'max_features': 1.0, 'min_samples_leaf': 5}"
+4,0.611504305897136,0.03729624311234211,"{'max_features': 0.3, 'min_samples_leaf': 3}"
+5,0.5953952597506811,0.03661209354731289,"{'max_features': 0.3, 'min_samples_leaf': 5}"
+0,0.5944379619202663,0.03771442230145619,"{'max_features': 0.1, 'min_samples_leaf': 1}"
+1,0.5718343179602936,0.036271846986507164,"{'max_features': 0.1, 'min_samples_leaf': 3}"
+2,0.549098244477976,0.03535631376201526,"{'max_features': 0.1, 'min_samples_leaf': 5}"
