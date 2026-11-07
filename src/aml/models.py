@@ -28,14 +28,15 @@ def gp_kernel(d: int):
     ) + WhiteKernel(0.3, (1e-5, 10.0))
 
 
-def make_gp(d: int):
-    """Pipeline for d features. Scaling before imputing, so KNN distances
-    aren't dominated by features with huge values."""
+def make_gp(d: int, imputer=None):
+    """Pipeline for d features: quantile transform, imputer (default KNNImputer()),
+    GP. Scaling before imputing, so KNN distances aren't dominated by features
+    with huge values."""
     return make_pipeline(
         QuantileTransformer(
             n_quantiles=500, output_distribution="normal", random_state=SEED
         ),
-        KNNImputer(),
+        KNNImputer() if imputer is None else imputer,
         GaussianProcessRegressor(
             gp_kernel(d), normalize_y=True, n_restarts_optimizer=2, random_state=SEED
         ),
