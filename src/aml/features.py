@@ -5,12 +5,19 @@ import time
 import numpy as np
 import pandas as pd
 
+from joblib import Parallel
+from joblib import delayed
+from scipy.optimize import minimize
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from sklearn.base import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import IsolationForest
 from sklearn.feature_selection import mutual_info_regression
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import ConstantKernel
+from sklearn.gaussian_process.kernels import WhiteKernel
 from sklearn.impute import KNNImputer
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
@@ -230,6 +237,90 @@ def mutual_information(
                 Z.loc[present, [col]], y[present], random_state=seed + s
             )[0]
     return _summary(scores, X.columns)
+
+
+def correlated_block(X: pd.DataFrame, threshold: float = 0.3) -> list[str]:
+    """Features with |Spearman| >= threshold to at least one other feature.
+
+    In this data the other features correlate with nothing and carry no signal.
+    """
+    corr = X.corr(method="spearman").abs().to_numpy().copy()
+    np.fill_diagonal(corr, 0)
+    return X.columns[corr.max(axis=0) >= threshold].tolist()
+
+
+def _verbose_lbfgs(label: str, max_iter: int):
+    """GP optimizer: sklearn's L-BFGS-B, printing progress every 25 iterations."""
+
+    def optimizer(obj_func, initial_theta, bounds):
+        state = {"iter": 0, "value": np.nan, "start": time.time()}
+
+        def func(theta):
+            state["value"], grad = obj_func(theta)
+            return state["value"], grad
+
+        def callback(_):
+            state["iter"] += 1
+            if state["iter"] % 25 == 0:
+                print(
+                    f"  [{label}] iter {state['iter']}, "
+                    f"-log marginal likelihood {state['value']:.2f}, "
+                    f"{(time.time() - state['start']) / 60:.1f} min",
+                    flush=True,
+                )
+
+        result = minimize(
+            func,
+            initial_theta,
+            method="L-BFGS-B",
+            jac=True,
+            bounds=bounds,
+            callback=callback,
+            options={"maxiter": max_iter},
+        )
+        return result.x, result.fun
+
+    return optimizer
+
+
+def gp_ard_importance(
+    X: pd.DataFrame,
+    y: pd.Series,
+    n_splits: int = 5,
+    max_iter: int = 2000,
+    seed: int = 25,
+) -> pd.DataFrame:
+    """GP with one RBF length scale per feature (ARD); importance = 1 / length scale.
+
+    Quantile transform + KNN imputation first, so all features share a scale.
+    Fit once per training fold (in parallel) and average, so one optimizer
+    run's local optimum doesn't decide the order. Also prints each fold's
+    validation R².
+    """
+    Z = quantile_knn(X, seed)
+    d = Z.shape[1]
+
+    def fit_fold(i, train, val):
+        kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(
+            np.full(d, np.sqrt(d)), (1e-2, 1e5)
+        ) + WhiteKernel(0.3, (1e-3, 1.0))
+        gp = GaussianProcessRegressor(
+            kernel,
+            normalize_y=True,
+            optimizer=_verbose_lbfgs(f"fold {i}", max_iter),
+            random_state=seed,
+        ).fit(Z.iloc[train], y.iloc[train])
+        r2 = gp.score(Z.iloc[val], y.iloc[val])
+        print(f"  [fold {i}] done, validation R² {r2:.4f}", flush=True)
+        return 1 / gp.kernel_.k1.k2.length_scale, r2
+
+    splits = KFold(n_splits, shuffle=True, random_state=seed).split(Z)
+    results = Parallel(n_jobs=n_splits)(
+        delayed(fit_fold)(i, train, val) for i, (train, val) in enumerate(splits, 1)
+    )
+    r2 = np.array([r for _, r in results])
+    print(f"  ARD GP out-of-fold R² {r2.mean():.4f} ± {r2.std():.4f}", flush=True)
+    return _summary(np.array([imp for imp, _ in results]), X.columns)
 
 
 def uniform_noise_features(X: pd.DataFrame) -> list[str]:
