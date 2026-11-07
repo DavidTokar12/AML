@@ -6,7 +6,8 @@
    fitted on train + test together (no y involved).
 
 Run on the HPC: uv run python scripts/preprocess.py
-Writes outputs/features/train.csv (features, y, inlier) and test.csv.
+Writes outputs/features/train.csv (features, y, inlier) and test.csv, plus
+train_raw.csv / test_raw.csv: the same features before step 3.
 """
 
 import pandas as pd
@@ -32,16 +33,19 @@ def main() -> None:
     )
     Z = make_preprocessor().fit_transform(X_all[features])
 
+    # Locked features for the GP/SVR, raw ones (missing values, no transform)
+    # for the tree models and TabPFN
     n = len(X)
-    train = (
-        Z.iloc[:n].set_axis(X.index.astype(int)).assign(y=y.to_numpy(), inlier=inlier)
-    )
-    test = Z.iloc[n:].set_axis(X_test.index.astype(int))
-    train.to_csv(FEATURES_DIR / "train.csv", index_label="id")
-    test.to_csv(FEATURES_DIR / "test.csv", index_label="id")
+    ids_train, ids_test = X.index.astype(int), X_test.index.astype(int)
+    for suffix, data in (("", Z), ("_raw", X_all[features])):
+        train = data.iloc[:n].set_axis(ids_train).assign(y=y.to_numpy(), inlier=inlier)
+        train.to_csv(FEATURES_DIR / f"train{suffix}.csv", index_label="id")
+        data.iloc[n:].set_axis(ids_test).to_csv(
+            FEATURES_DIR / f"test{suffix}.csv", index_label="id"
+        )
     print(
         f"{len(features)} features, {len(train)} train rows ({inlier.sum()} inliers), "
-        f"{len(test)} test rows, missing left: {int(Z.isna().sum().sum())}; "
+        f"{len(X_test)} test rows, missing left after imputation: {int(Z.isna().sum().sum())}; "
         f"wrote {FEATURES_DIR}"
     )
 

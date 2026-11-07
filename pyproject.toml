@@ -12,6 +12,7 @@ dependencies = [
     "pandas",
     "python-dotenv",
     "scikit-learn>=1.6",
+    "tabpfn>=9.2.0",
 ]
 
 [dependency-groups]

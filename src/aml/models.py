@@ -1,7 +1,9 @@
-"""Locked preprocessing (quantile transform + iterative imputation) and the GP."""
+"""Locked preprocessing (quantile transform + iterative imputation) and the models
+with their tuned configs."""
 
 import numpy as np
 
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel
@@ -10,6 +12,7 @@ from sklearn.gaussian_process.kernels import WhiteKernel
 from sklearn.impute import IterativeImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.svm import SVR
 
 from aml.config import SEED
 
@@ -51,3 +54,45 @@ def make_gp(d: int) -> GaussianProcessRegressor:
     return GaussianProcessRegressor(
         gp_kernel(d), normalize_y=True, n_restarts_optimizer=2, random_state=SEED
     )
+
+
+# Models that take the raw cleaned features (missing values, no transform):
+# trees ignore monotone transforms and handle missing values themselves, and
+# TabPFN's docs advise against scaling. The GP and SVR need the locked features.
+RAW_INPUT = {"catboost", "extratrees", "tabpfn"}
+MODEL_NAMES = ("gp", "svr", "catboost", "extratrees", "tabpfn")
+
+
+def make_model(name: str, d: int):
+    """A model with its tuned config (best of scripts/model_cv.py's grid, 5x3 CV)
+    for d features."""
+    if name == "gp":
+        return make_gp(d)
+    if name == "svr":  # R² 0.703; C=100 and C=300 tied
+        return SVR(kernel="rbf", C=100, epsilon=1, gamma=1 / d)
+    if name == "catboost":  # R² 0.670
+        from catboost import CatBoostRegressor
+
+        return CatBoostRegressor(
+            iterations=2000,
+            depth=6,
+            l2_leaf_reg=3,
+            learning_rate=0.05,
+            rsm=0.5,
+            random_seed=SEED,
+            verbose=0,
+            allow_writing_files=False,
+        )
+    if name == "extratrees":  # R² 0.641
+        return ExtraTreesRegressor(
+            n_estimators=1000,
+            max_features=1.0,
+            min_samples_leaf=1,
+            random_state=SEED,
+            n_jobs=-1,
+        )
+    if name == "tabpfn":  # pretrained, no tuning; imported lazily (pulls in torch)
+        from tabpfn import TabPFNRegressor
+
+        return TabPFNRegressor(device="auto", random_state=SEED)
+    raise ValueError(f"Unknown model: {name}")

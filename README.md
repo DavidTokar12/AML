@@ -19,7 +19,7 @@ The data is downloaded and cached by `kagglehub` the first time you run anything
 
 ```bash
 uv run python scripts/preprocess.py   # locked features -> outputs/features/{train,test}.csv
-uv run python scripts/gp.py           # GP fit on all inlier rows -> outputs/submission_gp.csv
+uv run python scripts/submit.py       # every model fit on all inlier rows -> outputs/submission_<model>.csv
 ```
 
 `scripts/feature_importance.py` (RF + MI importance) is only needed for the notebook's record of the selection.

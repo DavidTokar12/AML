@@ -40,11 +40,16 @@ def load_clean_data() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray
     return X, y, X_test, inlier
 
 
-def load_features() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray]:
-    """The locked, preprocessed features written by scripts/preprocess.py:
-    X_train, y_train, X_test, inlier.
+def load_features(
+    raw: bool = False,
+) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, np.ndarray]:
+    """The locked features written by scripts/preprocess.py: X_train, y_train,
+    X_test, inlier. raw=True: the same 185 features before the quantile
+    transform and imputation (with missing values).
     """
-    train = pd.read_csv(FEATURES_DIR / "train.csv", index_col="id")
-    X_test = pd.read_csv(FEATURES_DIR / "test.csv", index_col="id")
+    load_dotenv()  # tokens, e.g. TABPFN_TOKEN
+    suffix = "_raw" if raw else ""
+    train = pd.read_csv(FEATURES_DIR / f"train{suffix}.csv", index_col="id")
+    X_test = pd.read_csv(FEATURES_DIR / f"test{suffix}.csv", index_col="id")
     y, inlier = train.pop("y"), train.pop("inlier").to_numpy()
     return train, y, X_test, inlier
