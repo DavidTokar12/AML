@@ -24,7 +24,8 @@ def main() -> None:
     # Train and test ids overlap (both start at 0), so split by position
     X_all = pd.concat([X, X_test], ignore_index=True)
     print("Finding the correlated block...", flush=True)
-    features = [c for c in X.columns if c in set(correlated_block(X_all))]
+    block = set(correlated_block(X_all))  # computed once, not per column
+    features = [c for c in X.columns if c in block]
     print(
         f"Quantile transform + iterative imputation of {len(features)} features...",
         flush=True,
