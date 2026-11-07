@@ -1,0 +1,17 @@
+repeat,fold,r2,log_marginal_likelihood,kernel,minutes
+0,0,,-959.1701832858582,"1.22**2 * Matern(length_scale=30.6, nu=2.5) + 0.593**2 * RBF(length_scale=7.54) + WhiteKernel(noise_level=1e-05)",1.5297743638356527
+1,1,0.6438075224489987,-808.8360564285321,"0.768**2 * Matern(length_scale=10.4, nu=2.5) + 1.56**2 * RBF(length_scale=41.8) + WhiteKernel(noise_level=1e-05)",0.5728936672210694
+1,2,0.7291231733080541,-825.4060844657815,"0.812**2 * Matern(length_scale=11, nu=2.5) + 0.86**2 * RBF(length_scale=24) + WhiteKernel(noise_level=1e-05)",1.2280691981315612
+1,3,0.7233038387556925,-820.2493784414108,"0.775**2 * Matern(length_scale=10.7, nu=2.5) + 1.06**2 * RBF(length_scale=25.4) + WhiteKernel(noise_level=1e-05)",0.7039091944694519
+1,4,0.7202854560625966,-816.215982996275,"0.778**2 * Matern(length_scale=10.7, nu=2.5) + 0.894**2 * RBF(length_scale=23.4) + WhiteKernel(noise_level=1e-05)",0.5921684543291728
+1,5,0.6695913453690666,-797.927935543937,"0.825**2 * Matern(length_scale=11.6, nu=2.5) + 0.865**2 * RBF(length_scale=23.5) + WhiteKernel(noise_level=1e-05)",0.837908661365509
+2,1,0.736545532421,-823.6288115949777,"0.763**2 * Matern(length_scale=10.5, nu=2.5) + 0.987**2 * RBF(length_scale=24) + WhiteKernel(noise_level=1e-05)",1.2053133805592855
+2,2,0.7834511131090476,-834.424738821378,"0.822**2 * Matern(length_scale=11.1, nu=2.5) + 0.907**2 * RBF(length_scale=24) + WhiteKernel(noise_level=1e-05)",0.9593571702639262
+2,3,0.7135136049047706,-811.9368776790344,"0.833**2 * Matern(length_scale=11.5, nu=2.5) + 0.853**2 * RBF(length_scale=24.1) + WhiteKernel(noise_level=1e-05)",0.9492980480194092
+2,4,0.6417086108955243,-788.0285923928712,"0.766**2 * Matern(length_scale=10.9, nu=2.5) + 1.01**2 * RBF(length_scale=26.2) + WhiteKernel(noise_level=1e-05)",0.8893966476122538
+2,5,0.6279296966591472,-809.3398217288343,"1.62**2 * Matern(length_scale=51.6, nu=2.5) + 0.644**2 * RBF(length_scale=7.5) + WhiteKernel(noise_level=1e-05)",0.9151763200759888
+3,1,0.7293035911653234,-818.8415418455033,"0.769**2 * Matern(length_scale=10.6, nu=2.5) + 0.993**2 * RBF(length_scale=24.9) + WhiteKernel(noise_level=1e-05)",1.1281097213427225
+3,2,0.7242481927448362,-844.4167755597455,"0.891**2 * Matern(length_scale=11.4, nu=2.5) + 0.734**2 * RBF(length_scale=28) + WhiteKernel(noise_level=1e-05)",0.861824099222819
+3,3,0.7227344286658417,-808.1324317868923,"0.818**2 * Matern(length_scale=11.3, nu=2.5) + 0.841**2 * RBF(length_scale=23.4) + WhiteKernel(noise_level=1e-05)",0.8317243536313375
+3,4,0.7141498350117109,-809.7092245677375,"0.763**2 * Matern(length_scale=10.6, nu=2.5) + 1**2 * RBF(length_scale=24.2) + WhiteKernel(noise_level=1e-05)",0.699156669775645
+3,5,0.7085939300653307,-812.2101429011605,"0.809**2 * Matern(length_scale=11.1, nu=2.5) + 0.846**2 * RBF(length_scale=23.4) + WhiteKernel(noise_level=1e-05)",0.9115022023518881

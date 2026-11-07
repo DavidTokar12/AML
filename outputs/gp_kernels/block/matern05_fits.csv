@@ -1,0 +1,17 @@
+repeat,fold,r2,log_marginal_likelihood,kernel,minutes
+0,0,,-1021.9356278822937,"2.7**2 * Matern(length_scale=210, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.3584292809168498
+1,1,0.6171642126678063,-837.6197224655566,"3.62**2 * Matern(length_scale=376, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.2262352466583252
+1,2,0.7081929245995966,-857.7420600864419,"2.19**2 * Matern(length_scale=132, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.25270117123921715
+1,3,0.7055907839452091,-854.2047518533957,"2.87**2 * Matern(length_scale=229, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.33929651578267417
+1,4,0.7060629217882289,-851.2613143866208,"2.2**2 * Matern(length_scale=135, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.21237687269846597
+1,5,0.6587440633988013,-835.9338428039327,"2.5**2 * Matern(length_scale=179, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.21502724488576253
+2,1,0.713326536927126,-856.2799775519468,"2.52**2 * Matern(length_scale=177, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.31448568105697633
+2,2,0.7727836758872138,-868.903283722299,"2.33**2 * Matern(length_scale=146, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.22381974856058756
+2,3,0.6927179016099805,-846.6311075364667,"2.43**2 * Matern(length_scale=165, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.2698613921801249
+2,4,0.6260618516687603,-824.5421540074205,"2.78**2 * Matern(length_scale=228, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.31559343735376993
+2,5,0.6027218198691076,-845.0585311910561,"2.58**2 * Matern(length_scale=187, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.29793104728062947
+3,1,0.7074117658693826,-851.3991155733563,"2.52**2 * Matern(length_scale=177, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.3293904185295105
+3,2,0.6736763416805513,-868.3480574031935,"2.8**2 * Matern(length_scale=214, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.27907364765803017
+3,3,0.6992268916740477,-842.8647937068224,"2.35**2 * Matern(length_scale=155, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.3167990247408549
+3,4,0.6915331437939185,-844.504865050938,"2.6**2 * Matern(length_scale=191, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.26566850741704306
+3,5,0.6939232592230459,-846.1938475407006,"2.27**2 * Matern(length_scale=145, nu=0.5) + WhiteKernel(noise_level=1e-05)",0.2869675079981486

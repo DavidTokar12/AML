@@ -1,0 +1,17 @@
+repeat,fold,r2,log_marginal_likelihood,kernel,minutes
+0,0,,-957.6676411929915,"0.617**2 * RationalQuadratic(alpha=1e+05, length_scale=7.59) + 1.07**2 * RBF(length_scale=23) + WhiteKernel(noise_level=1e-05)",1.5323412100474039
+1,1,0.6496539046914412,-801.300003191955,"0.62**2 * RationalQuadratic(alpha=1e+05, length_scale=7.3) + 1.5**2 * RBF(length_scale=34.3) + WhiteKernel(noise_level=1e-05)",0.9611414114634196
+1,2,0.737128862436963,-818.9644300853388,"0.621**2 * RationalQuadratic(alpha=1e+05, length_scale=7.46) + 1.02**2 * RBF(length_scale=21.9) + WhiteKernel(noise_level=1e-05)",0.8845467408498128
+1,3,0.7278894934204947,-813.2753655840627,"0.602**2 * RationalQuadratic(alpha=1e+05, length_scale=7.34) + 1.16**2 * RBF(length_scale=23.3) + WhiteKernel(noise_level=1e-05)",0.9890374422073365
+1,4,0.7235477076205195,-808.6829953358399,"0.599**2 * RationalQuadratic(alpha=1e+05, length_scale=7.28) + 1.04**2 * RBF(length_scale=22.2) + WhiteKernel(noise_level=1e-05)",0.8442484815915425
+1,5,0.6714763850472993,-796.7128998005271,"1.2**2 * RationalQuadratic(alpha=0.822, length_scale=12.7) + 0.0168**2 * RBF(length_scale=48) + WhiteKernel(noise_level=1e-05)",0.6949467976888021
+2,1,0.7385980489172528,-816.2445485371201,"0.598**2 * RationalQuadratic(alpha=1e+05, length_scale=7.25) + 1.1**2 * RBF(length_scale=22.5) + WhiteKernel(noise_level=1e-05)",1.079470964272817
+2,2,0.7890579886255258,-827.6142504626471,"0.625**2 * RationalQuadratic(alpha=1e+05, length_scale=7.48) + 1.06**2 * RBF(length_scale=22.1) + WhiteKernel(noise_level=1e-05)",1.0513014356295267
+2,3,0.7184508483266577,-805.0864025867163,"0.623**2 * RationalQuadratic(alpha=1e+05, length_scale=7.58) + 1.04**2 * RBF(length_scale=22.5) + WhiteKernel(noise_level=1e-05)",1.158632465203603
+2,4,0.6453606635956538,-780.5151985998468,"0.596**2 * RationalQuadratic(alpha=1e+05, length_scale=7.46) + 1.13**2 * RBF(length_scale=24.4) + WhiteKernel(noise_level=1e-05)",0.9401792804400126
+2,5,0.6356228493352641,-808.9604288492554,"0.65**2 * RationalQuadratic(alpha=1e+05, length_scale=7.52) + 1.31**2 * RBF(length_scale=33.5) + WhiteKernel(noise_level=1e-05)",1.2704233368237814
+3,1,0.7307850757415565,-811.8022085387936,"0.606**2 * RationalQuadratic(alpha=9.07e+04, length_scale=7.34) + 1.1**2 * RBF(length_scale=23.1) + WhiteKernel(noise_level=1e-05)",0.6874051014582316
+3,2,0.6937051947314474,-832.7673360547847,"1.55**2 * RationalQuadratic(alpha=1e+05, length_scale=37.6) + 0.633**2 * RBF(length_scale=7.11) + WhiteKernel(noise_level=1e-05)",1.0118856191635133
+3,3,0.7305815636861461,-801.1999389556835,"0.613**2 * RationalQuadratic(alpha=1e+05, length_scale=7.5) + 1.03**2 * RBF(length_scale=22) + WhiteKernel(noise_level=1e-05)",1.0034986853599548
+3,4,0.7170095400103582,-802.338452903778,"0.594**2 * RationalQuadratic(alpha=1e+05, length_scale=7.29) + 1.12**2 * RBF(length_scale=22.6) + WhiteKernel(noise_level=1e-05)",0.7614633560180664
+3,5,0.7197058597104493,-806.1462776293464,"0.612**2 * RationalQuadratic(alpha=1e+05, length_scale=7.45) + 1**2 * RBF(length_scale=21.4) + WhiteKernel(noise_level=1e-05)",1.1366299510002136

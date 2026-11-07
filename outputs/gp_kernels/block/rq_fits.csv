@@ -1,0 +1,17 @@
+repeat,fold,r2,log_marginal_likelihood,kernel,minutes
+0,0,,-965.3085718686333,"1.19**2 * RationalQuadratic(alpha=0.827, length_scale=12.6) + WhiteKernel(noise_level=1e-05)",0.6281979322433472
+1,1,0.6692979962441066,-809.6202811479623,"1.47**2 * RationalQuadratic(alpha=0.344, length_scale=15.2) + WhiteKernel(noise_level=1e-05)",0.5333364645640055
+1,2,0.7283311638888086,-824.1970377815726,"1.17**2 * RationalQuadratic(alpha=0.797, length_scale=12.2) + WhiteKernel(noise_level=1e-05)",0.3617439071337382
+1,3,0.7244659891244176,-819.9482998298442,"1.36**2 * RationalQuadratic(alpha=0.506, length_scale=14) + WhiteKernel(noise_level=1e-05)",0.4148381193478902
+1,4,0.7194278099125612,-815.333594782199,"1.19**2 * RationalQuadratic(alpha=0.725, length_scale=12.5) + WhiteKernel(noise_level=1e-05)",0.4178458491961161
+1,5,0.6714822297525516,-796.7128152192721,"1.19**2 * RationalQuadratic(alpha=0.824, length_scale=12.7) + WhiteKernel(noise_level=1e-05)",0.28355112075805666
+2,1,0.7381570332560983,-823.2877114094392,"1.27**2 * RationalQuadratic(alpha=0.605, length_scale=13.2) + WhiteKernel(noise_level=1e-05)",0.26087458928426105
+2,2,0.7823138995228287,-833.3010854552156,"1.22**2 * RationalQuadratic(alpha=0.753, length_scale=12.6) + WhiteKernel(noise_level=1e-05)",0.4737652619679769
+2,3,0.7121772803293864,-810.4335421109263,"1.16**2 * RationalQuadratic(alpha=0.916, length_scale=12.2) + WhiteKernel(noise_level=1e-05)",0.38064768314361574
+2,4,0.6425580376612217,-787.52741329173,"1.27**2 * RationalQuadratic(alpha=0.567, length_scale=13.6) + WhiteKernel(noise_level=1e-05)",0.42922630707422893
+2,5,0.6542291155908893,-816.4279155251602,"1.25**2 * RationalQuadratic(alpha=0.529, length_scale=12.9) + WhiteKernel(noise_level=1e-05)",0.5327858646710714
+3,1,0.7329599870688903,-818.5491873685389,"1.28**2 * RationalQuadratic(alpha=0.575, length_scale=13.3) + WhiteKernel(noise_level=1e-05)",0.3762877424558004
+3,2,0.7209696825244514,-842.6102249190453,"1.36**2 * RationalQuadratic(alpha=0.402, length_scale=13.6) + WhiteKernel(noise_level=1e-05)",0.47304954528808596
+3,3,0.7213984653769155,-806.6862072954038,"1.15**2 * RationalQuadratic(alpha=0.909, length_scale=12.2) + WhiteKernel(noise_level=1e-05)",0.5185473839441935
+3,4,0.7162995620387125,-809.3310064807754,"1.3**2 * RationalQuadratic(alpha=0.57, length_scale=13.5) + WhiteKernel(noise_level=1e-05)",0.3239721735318502
+3,5,0.7067695458230159,-811.1161783651014,"1.17**2 * RationalQuadratic(alpha=0.794, length_scale=12.3) + WhiteKernel(noise_level=1e-05)",0.39768406947453816

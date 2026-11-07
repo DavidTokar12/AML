@@ -1,0 +1,17 @@
+repeat,fold,r2,log_marginal_likelihood,kernel,minutes
+0,0,,-974.6932910819899,"1.18**2 * Matern(length_scale=18.3, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.5331602096557617
+1,1,0.6308991631003614,-813.1919219847679,"0.904**2 * Matern(length_scale=13.7, nu=1.5) + 0.0307**2 * DotProduct(sigma_0=16.9) + WhiteKernel(noise_level=1e-05)",0.43234846989313763
+1,2,0.7242937306099243,-829.850924393764,"1.14**2 * Matern(length_scale=17.2, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.4342903971672058
+1,3,0.7208826132186592,-825.1563159387392,"1.21**2 * Matern(length_scale=18.5, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.785) + WhiteKernel(noise_level=1e-05)",0.310007643699646
+1,4,0.7173048403903037,-820.9550604972716,"1.14**2 * Matern(length_scale=17.5, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.6040258804957072
+1,5,0.664868848480317,-802.3455630069068,"1.18**2 * Matern(length_scale=18.4, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.3572520057360331
+2,1,0.7341651510536513,-828.4871192648347,"1.17**2 * Matern(length_scale=17.9, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.000171) + WhiteKernel(noise_level=1e-05)",0.8197115182876586
+2,2,0.7799584685319556,-838.9301525649745,"1.18**2 * Matern(length_scale=17.7, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.7508272727330526
+2,3,0.7107363285453874,-816.4781566941049,"1.16**2 * Matern(length_scale=17.8, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.2916498899459839
+2,4,0.6393288919839195,-793.2135943039242,"1.13**2 * Matern(length_scale=17.9, nu=1.5) + 0.0106**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.9107075413068135
+2,5,0.6199187270332958,-821.0273648691348,"0.914**2 * Matern(length_scale=13.6, nu=1.5) + 0.0255**2 * DotProduct(sigma_0=20.7) + WhiteKernel(noise_level=1e-05)",0.7586244066556295
+3,1,0.7295445064204118,-823.7196282180694,"1.15**2 * Matern(length_scale=17.6, nu=1.5) + 0.00844**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.6290475885073344
+3,2,0.6788840825324882,-845.368100258782,"0.855**2 * Matern(length_scale=12.2, nu=1.5) + 0.031**2 * DotProduct(sigma_0=10) + WhiteKernel(noise_level=1e-05)",0.8830687999725342
+3,3,0.7182336193601735,-812.6381962527062,"1.15**2 * Matern(length_scale=17.6, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.7233251810073853
+3,4,0.7121947458846147,-814.6112231474804,"1.19**2 * Matern(length_scale=18.3, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.44448142051696776
+3,5,0.7030698385680386,-816.3143403566651,"1.14**2 * Matern(length_scale=17.5, nu=1.5) + 0.00316**2 * DotProduct(sigma_0=0.0002) + WhiteKernel(noise_level=1e-05)",0.32777686913808185
