@@ -249,7 +249,7 @@ def correlated_block(X: pd.DataFrame, threshold: float = 0.3) -> list[str]:
     return X.columns[corr.max(axis=0) >= threshold].tolist()
 
 
-def _verbose_lbfgs(label: str, max_iter: int):
+def verbose_lbfgs(label: str, max_iter: int):
     """GP optimizer: sklearn's L-BFGS-B, printing progress every 25 iterations."""
 
     def optimizer(obj_func, initial_theta, bounds):
@@ -314,7 +314,7 @@ def gp_ard_importance(
         gp = GaussianProcessRegressor(
             kernel,
             normalize_y=True,
-            optimizer=_verbose_lbfgs(f"fold {i}", max_iter),
+            optimizer=verbose_lbfgs(f"fold {i}", max_iter),
             random_state=seed,
         ).fit(Z.iloc[train], y.iloc[train])
         r2 = gp.score(Z.iloc[val], y.iloc[val])

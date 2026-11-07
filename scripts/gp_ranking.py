@@ -24,6 +24,7 @@ from aml.features import outlier_scores
 
 OUTLIER_FRAC = 0.045
 SELECTORS = ("rf", "hgb", "svr", "lasso", "mi")
+MAX_ITER = 300  # optimizer steps per fold; the likelihood is flat well before this
 
 
 def beats_shadows(imp: pd.DataFrame) -> set[str]:
@@ -58,7 +59,7 @@ def main() -> None:
     y = y[inlier]
     print(f"{X.shape[1]} features (incl. 20 shadows), {len(X)} rows", flush=True)
 
-    perm, length_scale = gp_ard_importance(X, y, seed=SEED)
+    perm, length_scale = gp_ard_importance(X, y, max_iter=MAX_ITER, seed=SEED)
     for name, imp in (("perm", perm), ("ls", length_scale)):
         path = OUTPUT_DIR / f"importance_gp_{name}.csv"
         imp.to_csv(path)
