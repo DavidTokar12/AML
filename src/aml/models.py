@@ -62,7 +62,8 @@ def make_gp(d: int) -> GaussianProcessRegressor:
 # recovers missing values from the correlated features, their own missing-value
 # handling does not (the quantile transform doesn't matter for trees).
 RAW_INPUT = {"tabpfn"}
-MODEL_NAMES = ("gp", "svr", "catboost", "extratrees", "tabpfn")
+# MODEL_NAMES = ("gp", "svr", "catboost", "extratrees", "tabpfn")
+MODEL_NAMES = ("catboost", "extratrees")
 
 
 def make_model(name: str, d: int):
