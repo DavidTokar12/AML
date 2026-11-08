@@ -10,6 +10,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel
 from sklearn.gaussian_process.kernels import Matern
 from sklearn.gaussian_process.kernels import WhiteKernel
 from sklearn.impute import IterativeImputer
+from sklearn.impute import KNNImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.svm import SVR
@@ -17,20 +18,26 @@ from sklearn.svm import SVR
 from aml.config import SEED
 
 
-def make_preprocessor():
-    """Quantile transform to normal, then iterative imputation (each feature
-    regressed on the others with BayesianRidge, 10 rounds). Uses no y.
+def make_preprocessor(knn: bool = False):
+    """Quantile transform to normal, then imputation. Uses no y. Scaling comes
+    first so the imputer sees comparable features (KNN distances, regressions).
 
-    The imputer won the comparison (GP R² 0.719 vs 0.711 for KNN with 5
-    neighbours, better in 14/15 folds); KNN with 3-50 neighbours, uniform or
-    distance-weighted, and iterative imputation with ExtraTrees were worse.
-    Scaling comes first so the imputer sees comparable features.
+    Default: iterative imputation (each feature regressed on the others with
+    BayesianRidge, 10 rounds); won the comparison (GP R² 0.719 vs 0.716 for the
+    best KNN, 0.711 for KNN with 5 neighbours; ExtraTrees-based iterative was
+    worse). knn=True: KNN with 3 distance-weighted neighbours, the best KNN
+    setting: slightly worse but seconds instead of minutes on many features.
     """
+    imputer = (
+        KNNImputer(n_neighbors=3, weights="distance")
+        if knn
+        else IterativeImputer(max_iter=10, random_state=SEED)
+    )
     return make_pipeline(
         QuantileTransformer(
             n_quantiles=500, output_distribution="normal", random_state=SEED
         ),
-        IterativeImputer(max_iter=10, random_state=SEED),
+        imputer,
     ).set_output(transform="pandas")
 
 
