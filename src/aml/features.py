@@ -7,6 +7,7 @@ import pandas as pd
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
+from scipy.stats import ttest_1samp
 from sklearn.base import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import IsolationForest
@@ -16,6 +17,8 @@ from sklearn.inspection import permutation_importance
 from sklearn.model_selection import KFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import QuantileTransformer
+
+from aml.config import OUTPUT_DIR
 
 
 def spread_stats(X: pd.DataFrame) -> pd.DataFrame:
@@ -248,3 +251,36 @@ def clean_features(
         merged.iloc[:n].set_index(X_train.index),
         merged.iloc[n:].set_index(X_test.index),
     )
+
+
+SET_NAMES = ("significant", "consistent", "block", "block_plus", "above_shadow", "all")
+
+
+def tabpfn_feature_sets(columns: list[str], block: set[str]) -> dict[str, list[str]]:
+    """Feature sets from TabPFN's permutation importance (scripts/tabpfn_importance.py).
+
+    significant: importance > 0 with t-test p < 0.01 over the 10 splits;
+    consistent: beats the best shadow in >= 8 of 10 splits; block; block_plus:
+    block + consistent; above_shadow: mean importance > the best shadow's; all.
+    """
+    imp = pd.read_csv(OUTPUT_DIR / "tabpfn" / "importance.csv", index_col=0)
+    splits = pd.read_csv(OUTPUT_DIR / "tabpfn" / "importance_splits.csv")
+    per_split = splits.pivot_table(
+        index="feature", columns=["repeat", "fold"], values="mean"
+    )
+    is_shadow = per_split.index.str.startswith("shadow_")
+    wins = per_split.gt(per_split[is_shadow].max(), axis=1).sum(axis=1)
+    pvalue = splits.groupby("feature")["mean"].apply(
+        lambda s: ttest_1samp(s, 0, alternative="greater").pvalue
+    )
+    best_shadow = imp.loc[imp.index.str.startswith("shadow_"), "mean"].max()
+    consistent = set(wins.index[wins >= 8])
+    chosen = {
+        "significant": set(pvalue.index[pvalue < 0.01]),
+        "consistent": consistent,
+        "block": block,
+        "block_plus": block | consistent,
+        "above_shadow": set(imp.index[imp["mean"] > best_shadow]),
+        "all": set(columns),
+    }
+    return {name: [c for c in columns if c in s] for name, s in chosen.items()}
